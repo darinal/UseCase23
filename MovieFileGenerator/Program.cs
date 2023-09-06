@@ -1,55 +1,60 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.IO;
-using Bogus;
-using CsvHelper;
-using CsvHelper.Configuration;
+﻿using MovieFileGenerator.Models;
+using MovieFileGenerator.Services.Csv;
+using MovieFileGenerator.Services.Data;
 
-namespace CsvGeneratorApp
+namespace MovieFileGenerator;
+
+public class Program
 {
-    class Program
+    public static void Main()
     {
-        static void Main(string[] args)
-        {
-            // Create a Faker generator for generating fake data
-            var faker = new Faker();
+        DataGeneratorService dataGeneratorService = new DataGeneratorServiceBuilder()
+            .WithTitlesWithCredits()
+            .WithTitlesWithoutCredits()
+            .WithInvalidTitlesAndCredits()
+            .WithCreditsWithoutTitles()
+            .Build();
 
-            // Generate some sample data
-            var records = new List<SampleData>();
-            for (int i = 0; i < 10; i++)
-            {
-                records.Add(new SampleData
-                {
-                    Id = i + 1,
-                    Name = faker.Name.FullName(),
-                    Email = faker.Internet.Email(),
-                    Age = faker.Random.Number(18, 65)
-                });
-            }
+        dataGeneratorService.GenerateData();
 
-            // Define the path for the CSV file
-            var outputPath = Path.Combine("Output", "sample_data.csv");
+        ICollection<Title> titles = dataGeneratorService.GetTitles();
+        ICollection<Credit> credits = dataGeneratorService.GetCredits();
 
-            // Ensure the output directory exists
-            Directory.CreateDirectory(Path.GetDirectoryName(outputPath));
+        CsvFileService fileService = new();
+        fileService.SaveToCsv(titles, "titles.csv");
+        fileService.SaveToCsv(credits, "credits.csv");
 
-            // Write the data to the CSV file
-            using (var writer = new StreamWriter(outputPath))
-            using (var csv = new CsvWriter(writer, new CsvConfiguration(CultureInfo.InvariantCulture)))
-            {
-                csv.WriteRecords(records);
-            }
-
-            Console.WriteLine($"CSV file generated at: {outputPath}");
-        }
+        Print(titles, credits);
     }
 
-    public class SampleData
+    private static void Print(ICollection<Title> titles, ICollection<Credit> credits)
     {
-        public int Id { get; set; }
-        public string Name { get; set; }
-        public string Email { get; set; }
-        public int Age { get; set; }
+        foreach (Title title in titles)
+        {
+            Console.WriteLine($"{title.Id}, {title.TitleName} ({title.AgeCertification}) - {title.ReleaseYear}");
+            Console.Write("Cast: ");
+
+            List<Credit> relatedCredits = credits.Where(c => c.TitleId == title.Id).ToList();
+            if (relatedCredits.Count <= 0)
+            {
+                Console.Write("none");
+                Console.WriteLine();
+                Console.WriteLine();
+
+                continue;
+            }
+
+            for (int i = 0; i < relatedCredits.Count; i++)
+            {
+                Console.Write($"{relatedCredits[i].Role}: {relatedCredits[i].RealName}");
+                if (i < relatedCredits.Count - 1)
+                {
+                    Console.WriteLine();
+                }
+            }
+
+            Console.WriteLine();
+            Console.WriteLine();
+        }
     }
 }

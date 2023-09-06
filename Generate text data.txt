@@ -1,0 +1,1741 @@
+User
+create c# code to generate data for list of two connected entries: Titles and Credits. One title can have many credits.
+use https://github.com/bchavez/Bogus library to generate data
+Requirements for fields:
+Titles list:
+id numeric title identifier 
+title textual movie (series) name 
+description textual title description 
+release_year should have a Common Era year format 
+age_certification should be one of these: G, PG, PG-13, R, NC-17, U, U/A, A, S, AL, 6, 9, 12, 12A, 15, 18, 18R, R18, R21, M, MA15+, R16, R18+, X18, T, E, E10+, EC, C, CA, GP, M/PG, TV-Y, TV-Y7, TV-G, TV-PG, TV-14, TV-MA 
+runtime should be a common movie duration in minutes 
+genres should contain a list of strings representing various movie or tv-series genres 
+production_country should represent a country in ISO 3166-1 Alpha-3 code 
+seasons should represent the number of seasons for series or be empty for movies 
+Credits list:
+id numeric credits identifier 
+title_id corresponding title id 
+real_name full credits member name 
+character_name corresponding movie (tv-series) character name 
+role should represent corresponding role and be one of these: Director, Producer, Screenwriter, Actor, Actress, Cinematographer, Film Editor, Production Designer, Costume Designer, Music Composer 
+ChatGPT
+To generate fake data using the Bogus library, first, you need to install it:
+
+bash
+Copy code
+Install-Package Bogus
+Next, let's write the code to generate the data:
+
+csharp
+Copy code
+using System;
+using System.Collections.Generic;
+using Bogus;
+using Bogus.DataSets;
+
+public class Program
+{
+    public class Title
+    {
+        public int Id { get; set; }
+        public string TitleName { get; set; }
+        public string Description { get; set; }
+        public int ReleaseYear { get; set; }
+        public string AgeCertification { get; set; }
+        public int Runtime { get; set; }
+        public List<string> Genres { get; set; }
+        public string ProductionCountry { get; set; }
+        public int? Seasons { get; set; }
+    }
+
+    public class Credit
+    {
+        public int Id { get; set; }
+        public int TitleId { get; set; }
+        public string RealName { get; set; }
+        public string CharacterName { get; set; }
+        public string Role { get; set; }
+    }
+
+    public static void Main()
+    {
+        var titleId = 1;
+        var creditId = 1;
+
+        var titleFaker = new Faker<Title>()
+            .RuleFor(t => t.Id, f => titleId++)
+            .RuleFor(t => t.TitleName, f => f.Lorem.Sentence())
+            .RuleFor(t => t.Description, f => f.Lorem.Paragraph())
+            .RuleFor(t => t.ReleaseYear, f => f.Date.Past().Year)
+            .RuleFor(t => t.AgeCertification, f => f.PickRandom(new List<string>
+            {
+                "G", "PG", "PG-13", "R", "NC-17", "U", "U/A", "A", "S", "AL", "6", "9", "12", 
+                "12A", "15", "18", "18R", "R18", "R21", "M", "MA15+", "R16", "R18+", "X18",
+                "T", "E", "E10+", "EC", "C", "CA", "GP", "M/PG", "TV-Y", "TV-Y7", "TV-G",
+                "TV-PG", "TV-14", "TV-MA"
+            }))
+            .RuleFor(t => t.Runtime, f => f.Random.Int(80, 180))
+            .RuleFor(t => t.Genres, f => new List<string> { f.PickRandom(new[] { "Action", "Drama", "Comedy", "Horror", "Adventure" }) })
+            .RuleFor(t => t.ProductionCountry, f => f.Address.CountryCode())
+            .RuleFor(t => t.Seasons, f => f.Random.Int(0, 10));
+
+        var creditFaker = new Faker<Credit>()
+            .RuleFor(c => c.Id, f => creditId++)
+            .RuleFor(c => c.TitleId, f => f.Random.Int(1, titleId - 1))
+            .RuleFor(c => c.RealName, f => f.Name.FullName())
+            .RuleFor(c => c.CharacterName, f => f.Name.FirstName())
+            .RuleFor(c => c.Role, f => f.PickRandom(new[]
+            {
+                "Director", "Producer", "Screenwriter", "Actor", "Actress",
+                "Cinematographer", "Film Editor", "Production Designer",
+                "Costume Designer", "Music Composer"
+            }));
+
+        var titles = titleFaker.Generate(10);
+        var credits = creditFaker.Generate(50);
+
+        foreach (var title in titles)
+        {
+            Console.WriteLine($"{title.Id}. {title.TitleName} - {title.ReleaseYear}");
+        }
+
+        Console.WriteLine("------------");
+
+        foreach (var credit in credits)
+        {
+            Console.WriteLine($"{credit.Id}. {credit.RealName} - {credit.Role}");
+        }
+    }
+}
+This code will generate 10 movie titles and 50 credits using the Bogus library. Adjust the numbers as needed.
+
+Note: The above code makes some assumptions about your domain. For example, it assumes that a movie or TV show will have genres from a limited list ("Action", "Drama", "Comedy", "Horror", "Adventure"), and so on. Adjust according to your specific requirements.
+
+
+
+
+User
+Do the same, but make sure, one title contains at least 3 credits
+ChatGPT
+Certainly! We can achieve that by generating the credits right after generating each title, ensuring that each title will have at least 3 associated credits.
+
+Here's the updated code:
+
+csharp
+Copy code
+using System;
+using System.Collections.Generic;
+using Bogus;
+using Bogus.DataSets;
+
+public class Program
+{
+    public class Title
+    {
+        public int Id { get; set; }
+        public string TitleName { get; set; }
+        public string Description { get; set; }
+        public int ReleaseYear { get; set; }
+        public string AgeCertification { get; set; }
+        public int Runtime { get; set; }
+        public List<string> Genres { get; set; }
+        public string ProductionCountry { get; set; }
+        public int? Seasons { get; set; }
+    }
+
+    public class Credit
+    {
+        public int Id { get; set; }
+        public int TitleId { get; set; }
+        public string RealName { get; set; }
+        public string CharacterName { get; set; }
+        public string Role { get; set; }
+    }
+
+    public static void Main()
+    {
+        var titleId = 1;
+        var creditId = 1;
+        var credits = new List<Credit>();
+
+        var titleFaker = new Faker<Title>()
+            //...[same as previous]...
+
+        var creditFaker = new Faker<Credit>()
+            .RuleFor(c => c.Id, f => creditId++)
+            .RuleFor(c => c.TitleId, titleId) // Use the current titleId
+            .RuleFor(c => c.RealName, f => f.Name.FullName())
+            .RuleFor(c => c.CharacterName, f => f.Name.FirstName())
+            .RuleFor(c => c.Role, f => f.PickRandom(new[]
+            {
+                "Director", "Producer", "Screenwriter", "Actor", "Actress",
+                "Cinematographer", "Film Editor", "Production Designer",
+                "Costume Designer", "Music Composer"
+            }));
+
+        var titles = titleFaker.Generate(10);
+
+        foreach (var title in titles)
+        {
+            // Generate at least 3 credits for each title
+            credits.AddRange(creditFaker.Generate(3));
+
+            titleId++; // Increment titleId for the next set of credits
+        }
+
+        foreach (var title in titles)
+        {
+            Console.WriteLine($"{title.Id}. {title.TitleName} - {title.ReleaseYear}");
+        }
+
+        Console.WriteLine("------------");
+
+        foreach (var credit in credits)
+        {
+            Console.WriteLine($"{credit.Id}. {credit.RealName} - {credit.Role}");
+        }
+    }
+}
+In this code, after generating each title, we generate at least 3 credits for that title. By doing this, we ensure that each title will have at least 3 associated credits.
+
+
+
+
+User
+Expand the code to generate 
+1) at least 90 movies (titles) which have from 3 to 20 credits each, all comply with field requirements
+2) Generate 10 movies without credits, all comply with field requirements
+3) Generate 30 credits without movies, all comply with field requirements
+4) Generate 10 movies with at least 1 credit. Movie or credit should have 1 or more more fields that DO NOT comply with provided higher requirements
+ChatGPT
+Alright, let's expand the code accordingly:
+
+Generate at least 90 movies which have from 3 to 20 credits each, all complying with field requirements.
+Generate 10 movies without credits, all complying with field requirements.
+Generate 30 credits without movies, all complying with field requirements.
+Generate 10 movies with at least 1 credit where either the movie or credit does not comply with the provided requirements.
+csharp
+Copy code
+using System;
+using System.Collections.Generic;
+using Bogus;
+using Bogus.DataSets;
+
+public class Program
+{
+    public class Title
+    {
+        //...[same as previous]...
+    }
+
+    public class Credit
+    {
+        //...[same as previous]...
+    }
+
+    public static void Main()
+    {
+        var titleId = 1;
+        var creditId = 1;
+        var credits = new List<Credit>();
+        var titles = new List<Title>();
+
+        var titleFaker = new Faker<Title>()
+            //...[same as previous]...
+
+        var creditFaker = new Faker<Credit>()
+            //...[same as previous]...
+
+        // 1) 90 movies with 3-20 credits each
+        for (int i = 0; i < 90; i++)
+        {
+            var title = titleFaker.Generate();
+            titles.Add(title);
+
+            int numCredits = new Random().Next(3, 21);
+            for (int j = 0; j < numCredits; j++)
+            {
+                credits.Add(creditFaker.Generate());
+                creditId++;
+            }
+            titleId++;
+        }
+
+        // 2) 10 movies without credits
+        titles.AddRange(titleFaker.Generate(10));
+        titleId += 10;
+
+        // 3) 30 credits without movies
+        for (int i = 0; i < 30; i++)
+        {
+            var credit = creditFaker.Generate();
+            credit.TitleId = 0; // No associated movie
+            credits.Add(credit);
+            creditId++;
+        }
+
+        // 4) Generate 10 movies with at least 1 credit with some fields not complying
+        var nonCompliantTitleFaker = new Faker<Title>()
+            .RuleFor(t => t.Id, f => titleId++)
+            .RuleFor(t => t.TitleName, f => f.Lorem.Word()) // Not a sentence
+            .RuleFor(t => t.Genres, f => new List<string> { f.Lorem.Word() }) // Not a valid genre
+            // other compliant rules ...
+
+        var nonCompliantCreditFaker = new Faker<Credit>()
+            .RuleFor(c => c.Id, f => creditId++)
+            .RuleFor(c => c.TitleId, titleId)
+            .RuleFor(c => c.Role, f => f.Lorem.Word()) // Not a valid role
+            // other compliant rules ...
+
+        for (int i = 0; i < 10; i++)
+        {
+            var title = nonCompliantTitleFaker.Generate();
+            titles.Add(title);
+
+            var credit = nonCompliantCreditFaker.Generate();
+            credits.Add(credit);
+
+            titleId++;
+            creditId++;
+        }
+
+        // Output titles and credits
+        foreach (var title in titles)
+        {
+            Console.WriteLine($"{title.Id}. {title.TitleName} - {title.ReleaseYear}");
+        }
+
+        Console.WriteLine("------------");
+
+        foreach (var credit in credits)
+        {
+            Console.WriteLine($"{credit.Id}. {credit.RealName} - {credit.Role}");
+        }
+    }
+}
+This code follows the four conditions specified. For the 4th condition, I've assumed a couple of fields to not comply with the requirements. You can adjust these as you see fit.
+
+
+
+
+User
+split what you have written to methods according to clean code
+ChatGPT
+Certainly, let's refactor the code to make it cleaner and more modular by breaking it down into methods:
+
+csharp
+Copy code
+using System;
+using System.Collections.Generic;
+using Bogus;
+using Bogus.DataSets;
+
+public class Program
+{
+    public class Title
+    {
+        //...[same as previous]...
+    }
+
+    public class Credit
+    {
+        //...[same as previous]...
+    }
+
+    private static Faker<Title> titleFaker;
+    private static Faker<Credit> creditFaker;
+    private static Faker<Title> nonCompliantTitleFaker;
+    private static Faker<Credit> nonCompliantCreditFaker;
+
+    public static void Main()
+    {
+        InitializeFakers();
+
+        var titles = new List<Title>();
+        var credits = new List<Credit>();
+
+        titles.AddRange(GenerateCompliantMoviesWithCredits(90, credits));
+        titles.AddRange(GenerateCompliantMoviesWithoutCredits(10));
+        credits.AddRange(GenerateCreditsWithoutMovies(30));
+        titles.AddRange(GenerateNonCompliantMoviesWithCredits(10, credits));
+
+        PrintTitles(titles);
+        PrintCredits(credits);
+    }
+
+    private static void InitializeFakers()
+    {
+        titleFaker = new Faker<Title>()
+            //...[same as previous]...
+
+        creditFaker = new Faker<Credit>()
+            //...[same as previous]...
+
+        nonCompliantTitleFaker = new Faker<Title>()
+            //...[non-compliant rules]...
+
+        nonCompliantCreditFaker = new Faker<Credit>()
+            //...[non-compliant rules]...
+    }
+
+    private static List<Title> GenerateCompliantMoviesWithCredits(int movieCount, List<Credit> credits)
+    {
+        var titles = new List<Title>();
+        for (int i = 0; i < movieCount; i++)
+        {
+            var title = titleFaker.Generate();
+            titles.Add(title);
+
+            int numCredits = new Random().Next(3, 21);
+            for (int j = 0; j < numCredits; j++)
+            {
+                credits.Add(creditFaker.Generate());
+            }
+        }
+
+        return titles;
+    }
+
+    private static List<Title> GenerateCompliantMoviesWithoutCredits(int movieCount)
+    {
+        return titleFaker.Generate(movieCount);
+    }
+
+    private static List<Credit> GenerateCreditsWithoutMovies(int creditCount)
+    {
+        var credits = new List<Credit>();
+        for (int i = 0; i < creditCount; i++)
+        {
+            var credit = creditFaker.Generate();
+            credit.TitleId = 0; // No associated movie
+            credits.Add(credit);
+        }
+
+        return credits;
+    }
+
+    private static List<Title> GenerateNonCompliantMoviesWithCredits(int movieCount, List<Credit> credits)
+    {
+        var titles = new List<Title>();
+        for (int i = 0; i < movieCount; i++)
+        {
+            var title = nonCompliantTitleFaker.Generate();
+            titles.Add(title);
+
+            var credit = nonCompliantCreditFaker.Generate();
+            credits.Add(credit);
+        }
+
+        return titles;
+    }
+
+    private static void PrintTitles(List<Title> titles)
+    {
+        foreach (var title in titles)
+        {
+            Console.WriteLine($"{title.Id}. {title.TitleName} - {title.ReleaseYear}");
+        }
+
+        Console.WriteLine("------------");
+    }
+
+    private static void PrintCredits(List<Credit> credits)
+    {
+        foreach (var credit in credits)
+        {
+            Console.WriteLine($"{credit.Id}. {credit.RealName} - {credit.Role}");
+        }
+    }
+}
+By following the clean code practices, the main logic in the Main method has been made more readable. Auxiliary functionalities have been moved to separate methods with meaningful names.
+
+
+
+
+User
+fakers require titleId and credit id
+ChatGPT
+Certainly. Let's address the missing titleId and creditId by making them class-level fields, which can then be updated and used across methods.
+
+Here's the refactored code:
+
+csharp
+Copy code
+using System;
+using System.Collections.Generic;
+using Bogus;
+using Bogus.DataSets;
+
+public class Program
+{
+    public class Title
+    {
+        // ...[same as previous]...
+    }
+
+    public class Credit
+    {
+        // ...[same as previous]...
+    }
+
+    private static Faker<Title> titleFaker;
+    private static Faker<Credit> creditFaker;
+    private static Faker<Title> nonCompliantTitleFaker;
+    private static Faker<Credit> nonCompliantCreditFaker;
+
+    private static int titleId = 1;
+    private static int creditId = 1;
+
+    public static void Main()
+    {
+        InitializeFakers();
+
+        var titles = new List<Title>();
+        var credits = new List<Credit>();
+
+        titles.AddRange(GenerateCompliantMoviesWithCredits(90, credits));
+        titles.AddRange(GenerateCompliantMoviesWithoutCredits(10));
+        credits.AddRange(GenerateCreditsWithoutMovies(30));
+        titles.AddRange(GenerateNonCompliantMoviesWithCredits(10, credits));
+
+        PrintTitles(titles);
+        PrintCredits(credits);
+    }
+
+    private static void InitializeFakers()
+    {
+        titleFaker = new Faker<Title>()
+            .RuleFor(t => t.Id, f => titleId++)
+            // ...[other rules]...
+
+        creditFaker = new Faker<Credit>()
+            .RuleFor(c => c.Id, f => creditId++)
+            .RuleFor(c => c.TitleId, titleId)
+            // ...[other rules]...
+
+        nonCompliantTitleFaker = new Faker<Title>()
+            .RuleFor(t => t.Id, f => titleId++)
+            // ...[non-compliant rules]...
+
+        nonCompliantCreditFaker = new Faker<Credit>()
+            .RuleFor(c => c.Id, f => creditId++)
+            .RuleFor(c => c.TitleId, titleId)
+            // ...[non-compliant rules]...
+    }
+
+    // ...[rest of the methods, unchanged]...
+}
+Now the titleId and creditId are class-level fields, which are incremented within the fakers as needed, ensuring each title and credit has a unique identifier.
+
+
+
+
+User
+print in a way
+Title:
+Id, Title
+Cast:
+Credit 1 Name, Credit 2 Name
+ChatGPT
+To achieve the desired printing format, we will restructure the printing logic to combine the information of titles and credits and print them together. Here's how you can do that:
+
+csharp
+Copy code
+// ... [other parts of the code] ...
+
+private static void PrintCombinedTitlesAndCredits(List<Title> titles, List<Credit> credits)
+{
+    foreach (var title in titles)
+    {
+        Console.WriteLine("Title:");
+        Console.WriteLine($"{title.Id}, {title.TitleName}");
+        Console.Write("Cast: ");
+
+        var relatedCredits = credits.FindAll(c => c.TitleId == title.Id);
+        if (relatedCredits.Count > 0)
+        {
+            for (int i = 0; i < relatedCredits.Count; i++)
+            {
+                Console.Write($"{relatedCredits[i].RealName}");
+                if (i < relatedCredits.Count - 1)
+                {
+                    Console.Write(", ");
+                }
+            }
+            Console.WriteLine();
+        }
+        else
+        {
+            Console.WriteLine("No Credits");
+        }
+
+        Console.WriteLine("--------------------");
+    }
+}
+
+// In Main method replace 
+// PrintTitles(titles);
+// PrintCredits(credits);
+// with:
+PrintCombinedTitlesAndCredits(titles, credits);
+This function PrintCombinedTitlesAndCredits first prints the title details and then looks up the corresponding credits from the credits list. If there are related credits, it prints them in a comma-separated manner. If no credits are associated with a title, it prints "No Credits".
+
+
+
+
+User
+all credits are to one title!
+ChatGPT
+Ah, I apologize for the oversight. The issue arises because each Credit object has its TitleId field set to the global titleId, which keeps increasing as we generate new titles. This results in all credits being associated with the last title.
+
+We can address this issue by adjusting how we associate Credit objects with Title objects when we generate them.
+
+Here's a modified version of the GenerateCompliantMoviesWithCredits function:
+
+csharp
+Copy code
+private static List<Title> GenerateCompliantMoviesWithCredits(int movieCount, List<Credit> credits)
+{
+    var titles = new List<Title>();
+    for (int i = 0; i < movieCount; i++)
+    {
+        var title = titleFaker.Generate();
+        titles.Add(title);
+
+        int numCredits = new Random().Next(3, 21);
+        for (int j = 0; j < numCredits; j++)
+        {
+            var credit = creditFaker.Generate();
+            credit.TitleId = title.Id;  // Associate credit with the current title
+            credits.Add(credit);
+        }
+    }
+
+    return titles;
+}
+The change here is that for every title we generate, we specifically associate the subsequent credits with that title's ID using the line credit.TitleId = title.Id;. This should result in the correct behavior where credits are distributed across titles and not all associated with a single title.
+
+
+
+
+User
+and where to use is?
+ChatGPT
+I'm sorry for the confusion. Let's integrate the changes cohesively.
+
+To summarize:
+
+We're adjusting the GenerateCompliantMoviesWithCredits function to correctly associate credits with the respective titles they belong to.
+The PrintCombinedTitlesAndCredits function will display titles and their respective credits.
+I'll guide you on how to properly integrate these changes:
+
+Replace the previously defined GenerateCompliantMoviesWithCredits function in your code with the modified version I provided in the previous answer.
+In your Main function, after generating titles and credits, replace the separate PrintTitles and PrintCredits calls with a call to PrintCombinedTitlesAndCredits:
+csharp
+Copy code
+public static void Main()
+{
+    InitializeFakers();
+
+    var titles = new List<Title>();
+    var credits = new List<Credit>();
+
+    titles.AddRange(GenerateCompliantMoviesWithCredits(90, credits));
+    titles.AddRange(GenerateCompliantMoviesWithoutCredits(10));
+    credits.AddRange(GenerateCreditsWithoutMovies(30));
+    titles.AddRange(GenerateNonCompliantMoviesWithCredits(10, credits));
+
+    PrintCombinedTitlesAndCredits(titles, credits);  // Use this for combined printing
+}
+This setup will:
+
+Correctly associate each credit with its corresponding title.
+Print the titles and their associated credits in the desired format, "Title" followed by "Cast".
+With these modifications, the program should behave as expected.
+
+
+
+
+User
+no the problem is in faker. it still generates credits for the same title
+ChatGPT
+Got it. We need to adjust the creditFaker initialization so that it's aware of the title it's currently generating credits for.
+
+One approach is to modify the creditFaker each time you generate credits for a new title. Here's a way to make that adjustment:
+
+Modify the GenerateCompliantMoviesWithCredits method to reset the rule for TitleId in the creditFaker every time we're generating credits for a new title:
+csharp
+Copy code
+private static List<Title> GenerateCompliantMoviesWithCredits(int movieCount, List<Credit> credits)
+{
+    var titles = new List<Title>();
+    for (int i = 0; i < movieCount; i++)
+    {
+        var title = titleFaker.Generate();
+        titles.Add(title);
+
+        creditFaker.RuleFor(c => c.TitleId, title.Id);  // Set the TitleId rule for the current title
+
+        int numCredits = new Random().Next(3, 21);
+        for (int j = 0; j < numCredits; j++)
+        {
+            var credit = creditFaker.Generate();
+            credits.Add(credit);
+        }
+    }
+
+    return titles;
+}
+In the InitializeFakers method, remove or comment out the .RuleFor(c => c.TitleId, titleId) line from the creditFaker definition:
+csharp
+Copy code
+private static void InitializeFakers()
+{
+    titleFaker = new Faker<Title>()
+        .RuleFor(t => t.Id, f => titleId++)
+        // ...[other rules]...
+
+    creditFaker = new Faker<Credit>()
+        .RuleFor(c => c.Id, f => creditId++)
+        // .RuleFor(c => c.TitleId, titleId)  // Comment this out or remove
+        // ...[other rules]...
+
+    // ...[rest of the initialization]...
+}
+With this setup, every time you generate credits for a title in the GenerateCompliantMoviesWithCredits method, the creditFaker's rule for TitleId gets updated to the current title's ID. This ensures that the credits are correctly associated with their respective titles.
+
+
+
+
+User
+
+2 / 2
+
+save titles and credits in separate csv files in the top project folder using CsvHelper
+ChatGPT
+To save the titles and credits in separate CSV files using the CsvHelper library, follow these steps:
+
+Setup:
+First, ensure you have installed the CsvHelper NuGet package:
+
+mathematica
+Copy code
+Install-Package CsvHelper
+Code:
+
+csharp
+Copy code
+using CsvHelper;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+
+//... [Rest of your existing code, like Title and Credit class definitions, etc.] ...
+
+public static void Main()
+{
+    InitializeFakers();
+
+    var titles = new List<Title>();
+    var credits = new List<Credit>();
+
+    titles.AddRange(GenerateCompliantMoviesWithCredits(90, credits));
+    titles.AddRange(GenerateCompliantMoviesWithoutCredits(10));
+    credits.AddRange(GenerateCreditsWithoutMovies(30));
+    titles.AddRange(GenerateNonCompliantMoviesWithCredits(10, credits));
+
+    SaveToCsv(titles, "Titles.csv");
+    SaveToCsv(credits, "Credits.csv");
+}
+
+private static void SaveToCsv<T>(IEnumerable<T> records, string filename)
+{
+    using (var writer = new StreamWriter(filename))
+    using (var csv = new CsvWriter(writer, CultureInfo.InvariantCulture))
+    {
+        csv.WriteRecords(records);
+    }
+}
+Explanation:
+SaveToCsv<T> is a generic method that takes a list of records and a filename, then writes the records to the file using CsvHelper.
+After generating the titles and credits in the Main method, we call this function to save them to the respective CSV files.
+With these additions, the Titles.csv and Credits.csv files will be created in the top project folder with the generated data. If the files already exist, they will be overwritten. Adjust the paths as necessary if you need them to be saved elsewhere.
+
+
+
+
+User
+
+2 / 2
+
+save files in Output folder in the same folder where csproj file is located
+ChatGPT
+
+2 / 2
+
+To save the CSV files in the "Output" folder where your .csproj file is located, you can use the following approach to get the path dynamically and save the files accordingly.
+
+Get the .csproj directory:
+
+csharp
+Copy code
+string projectDirectory = Path.GetDirectoryName(Path.GetDirectoryName(System.IO.Directory.GetCurrentDirectory()));
+Construct the output directory:
+
+csharp
+Copy code
+string outputDirectory = Path.Combine(projectDirectory, "Output");
+Create the output directory if it doesn't exist:
+
+csharp
+Copy code
+Directory.CreateDirectory(outputDirectory);
+Save CSV files in that directory:
+
+Here's the updated SaveToCsv<T> function and related code:
+
+csharp
+Copy code
+using CsvHelper;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+
+// ... [Rest of your existing code, like Title and Credit class definitions, etc.] ...
+
+public static void Main()
+{
+    InitializeFakers();
+
+    var titles = new List<Title>();
+    var credits = new List<Credit>();
+
+    titles.AddRange(GenerateCompliantMoviesWithCredits(90, credits));
+    titles.AddRange(GenerateCompliantMoviesWithoutCredits(10));
+    credits.AddRange(GenerateCreditsWithoutMovies(30));
+    titles.AddRange(GenerateNonCompliantMoviesWithCredits(10, credits));
+
+    string projectDirectory = Path.GetDirectoryName(Path.GetDirectoryName(System.IO.Directory.GetCurrentDirectory()));
+    string outputDirectory = Path.Combine(projectDirectory, "Output");
+
+    Directory.CreateDirectory(outputDirectory);
+
+    SaveToCsv(titles, Path.Combine(outputDirectory, "Titles.csv"));
+    SaveToCsv(credits, Path.Combine(outputDirectory, "Credits.csv"));
+}
+
+private static void SaveToCsv<T>(IEnumerable<T> records, string filename)
+{
+    using (var writer = new StreamWriter(filename))
+    using (var csv = new CsvWriter(writer, CultureInfo.InvariantCulture))
+    {
+        csv.WriteRecords(records);
+    }
+}
+Now, this will save your Titles.csv and Credits.csv files in the Output folder located in the same folder as your .csproj file. The folder will be created if it doesn't already exist.
+
+
+
+
+User
+make titles more human like
+ChatGPT
+To make the titles more human-like, we can use the Faker library to its fullest extent. The Faker library provides a vast array of methods to generate meaningful data. For movie titles, we can combine multiple methods to generate meaningful and human-like titles.
+
+Here's a modification to your titleFaker setup that will use a combination of Faker methods to create more realistic titles:
+
+csharp
+Copy code
+titleFaker = new Faker<Title>()
+    .RuleFor(t => t.Id, f => titleId++)
+    .RuleFor(t => t.TitleName, f => f.PickRandom(new[]
+    {
+        $"{f.Commerce.ProductAdjective()} {f.Commerce.ProductName()}",
+        $"{f.Hacker.Adjective()} {f.Hacker.Noun()}",
+        $"{f.Lorem.Word()} of {f.Lorem.Word()}",
+        $"The {f.Lorem.Word()} {f.Hacker.Verb()}",
+        $"Return of the {f.Hacker.Noun()}",
+        $"{f.Name.FirstName()}'s {f.Hacker.Adjective()} Adventure"
+    }))
+    //...[other rules]...
+Explanation:
+
+I'm using methods from the Commerce, Hacker, and Lorem classes within Faker to create movie titles.
+I've given a few formats, and then I use PickRandom to pick one of those formats each time a new title is generated.
+By using a combination of these methods, the generated titles should look a lot more like actual movie names. You can further expand on the above list and mix and match various Faker methods to get even more variations.
+
+
+
+
+User
+rewrite this method to use complaint and noncomlpaint fakers
+ChatGPT
+If you want to use both compliant and non-compliant fakers within a single method to generate titles, you'll need to decide the proportion or criteria for when to use each faker. For demonstration purposes, I'll generate a mix of compliant and non-compliant titles based on a simple probability approach.
+
+For this example, let's say there's a 90% chance for each title to be compliant and a 10% chance for it to be non-compliant:
+
+csharp
+Copy code
+private static List<Title> GenerateMixedMoviesWithCredits(int movieCount, List<Credit> credits)
+{
+    var titles = new List<Title>();
+    var rng = new Random();
+
+    for (int i = 0; i < movieCount; i++)
+    {
+        Title title;
+
+        // Use compliant faker with 90% probability, non-compliant faker with 10% probability
+        if (rng.NextDouble() < 0.9)
+        {
+            title = compliantTitleFaker.Generate();
+        }
+        else
+        {
+            title = nonCompliantTitleFaker.Generate();
+        }
+
+        titles.Add(title);
+
+        // Associate credits with the generated title, whether compliant or not
+        creditFaker.RuleFor(c => c.TitleId, title.Id);
+        int numCredits = rng.Next(3, 21);  // Number of credits for the title
+        for (int j = 0; j < numCredits; j++)
+        {
+            var credit = creditFaker.Generate();
+            credits.Add(credit);
+        }
+    }
+
+    return titles;
+}
+In the above code:
+
+We're generating titles based on a probability approach. 90% of the time, we use the compliantTitleFaker to generate a compliant title, and 10% of the time, we use the nonCompliantTitleFaker to generate a non-compliant title.
+We then generate and associate credits with each title, regardless of whether it's compliant or not.
+Remember to have both compliantTitleFaker and nonCompliantTitleFaker initialized and set up with appropriate rules prior to invoking this method.
+
+
+
+
+User
+
+2 / 2
+
+in next code extract generation logic to separate service, and printing/saving logic to another service using clean code techniques
+
+using System.Globalization;
+using Bogus;
+using CsvHelper;
+using CsvHelper.Configuration;
+using MovieFileGenerator.Models;
+
+namespace MovieFileGenerator;
+
+public class Program
+{
+    private static List<Credit> _credits = new List<Credit>();
+    private static List<Title> _titles =  new List<Title>();
+
+    private static Faker<Title> titleFaker;
+    private static Faker<Credit> creditFaker;
+    private static Faker<Title> nonCompliantTitleFaker;
+    private static Faker<Credit> nonCompliantCreditFaker;
+
+    private static int titleId = 1;
+    private static int creditId = 1;
+
+    public static void Main()
+    {
+        InitializeFakers();
+
+        GenerateData();
+
+        PrintCombinedTitlesAndCredits(_titles, _credits);
+
+        SaveToCsv(_titles, "titles");
+        SaveToCsv(_credits, "credits");
+    }
+
+    private static void GenerateData()
+    {
+        GenerateMixedMoviesWithCredits(90);
+        GenerateCompliantMoviesWithoutCredits(10);
+        GenerateMixedMoviesWithCredits(10);
+        GenerateCreditsWithoutMovies(30);
+    }
+
+    private static void InitializeFakers()
+    {
+        titleFaker = new Faker<Title>()
+            .RuleFor(t => t.Id, f => titleId++)
+            .RuleFor(t => t.TitleName, f => f.PickRandom(new[]
+            {
+                $"{f.Commerce.ProductAdjective()} {f.Commerce.ProductName()}",
+                $"{f.Hacker.Adjective()} {f.Hacker.Noun()}",
+                $"{f.Lorem.Word()} of {f.Lorem.Word()}",
+                $"The {f.Lorem.Word()} {f.Hacker.Verb()}",
+                $"Return of the {f.Hacker.Noun()}",
+                $"{f.Name.FirstName()}'s {f.Hacker.Adjective()} Adventure"
+            }))
+            .RuleFor(t => t.Description, f => f.Lorem.Paragraph())
+            .RuleFor(t => t.ReleaseYear, f => f.Date.Past().Year)
+            .RuleFor(t => t.AgeCertification, f => f.PickRandom(new List<string>
+            {
+                "G", "PG", "PG-13", "R", "NC-17", "U", "U/A", "A", "S", "AL", "6", "9", "12",
+                "12A", "15", "18", "18R", "R18", "R21", "M", "MA15+", "R16", "R18+", "X18",
+                "T", "E", "E10+", "EC", "C", "CA", "GP", "M/PG", "TV-Y", "TV-Y7", "TV-G",
+                "TV-PG", "TV-14", "TV-MA"
+            }))
+            .RuleFor(t => t.Runtime, f => f.Random.Int(80, 180))
+            .RuleFor(t => t.Genres, f => new List<string> { f.PickRandom("Action", "Drama", "Comedy", "Horror", "Adventure") })
+            .RuleFor(t => t.ProductionCountry, f => f.Address.CountryCode())
+            .RuleFor(t => t.Seasons, f => f.Random.Int(0, 10));
+
+        creditFaker = new Faker<Credit>()
+            .RuleFor(c => c.Id, f => creditId++)
+            .RuleFor(c => c.TitleId, titleId)
+            .RuleFor(c => c.RealName, f => f.Name.FullName())
+            .RuleFor(c => c.CharacterName, f => f.Name.FirstName())
+            .RuleFor(c => c.Role, f => f.PickRandom(new[]
+            {
+                "Director", "Producer", "Screenwriter", "Actor", "Actress",
+                "Cinematographer", "Film Editor", "Production Designer",
+                "Costume Designer", "Music Composer"
+            }));
+
+        nonCompliantTitleFaker = new Faker<Title>()
+            .RuleFor(t => t.Id, f => titleId++)
+            .RuleFor(t => t.TitleName, f => f.Lorem.Word())
+            .RuleFor(t => t.Genres, f => new List<string> { f.Lorem.Word() });
+
+        nonCompliantCreditFaker = new Faker<Credit>()
+            .RuleFor(c => c.Id, f => creditId++)
+            .RuleFor(c => c.TitleId, titleId)
+            .RuleFor(c => c.Role, f => f.Lorem.Word());
+    }
+
+    private static List<Title> GenerateCompliantMoviesWithCredits(int movieCount)
+    {
+        List<Title> titles = new List<Title>();
+        for (int i = 0; i < movieCount; i++)
+        {
+            Title? title = titleFaker.Generate();
+            titles.Add(title);
+
+            int numCredits = new Random().Next(3, 21);
+            for (int j = 0; j < numCredits; j++)
+            {
+                Credit? credit = creditFaker.Generate();
+                credit.TitleId = title.Id;
+                _credits.Add(credit);
+            }
+        }
+
+        return titles;
+    }
+
+    private static void SaveToCsv<T>(IEnumerable<T> records, string filename)
+    {
+        string projectDirectory = Directory.GetParent(Environment.CurrentDirectory)!.Parent!.Parent!.FullName;
+
+        string outputPath = Path.Combine(projectDirectory, "Output");
+
+        Directory.CreateDirectory(outputPath);
+
+        string fullFilename = Path.Combine(outputPath, filename);
+
+        using StreamWriter writer = new StreamWriter(fullFilename);
+        using CsvWriter csv = new CsvWriter(writer, CultureInfo.InvariantCulture);
+        csv.WriteRecords(records);
+    }
+
+    private static void GenerateCompliantMoviesWithoutCredits(int movieCount)
+    {
+        _titles.AddRange(titleFaker.Generate(movieCount));
+    }
+
+    private static void GenerateCreditsWithoutMovies(int creditCount)
+    {
+        for (int i = 0; i < creditCount; i++)
+        {
+            Credit? credit = creditFaker.Generate();
+            credit.TitleId = 0;
+            _credits.Add(credit);
+        }
+    }
+
+    private static void GenerateMixedMoviesWithCredits(int movieCount)
+    {
+        Random rng = new();
+
+        for (int i = 0; i < movieCount; i++)
+        {
+            Title? title = rng.NextDouble() < 0.5 ? titleFaker.Generate() : nonCompliantTitleFaker.Generate();
+
+            _titles.Add(title);
+
+            creditFaker.RuleFor(c => c.TitleId, title.Id);
+            int numCredits = rng.Next(3, 21);
+
+            for (int j = 0; j < numCredits; j++)
+            {
+                Credit? credit = creditFaker.Generate();
+                _credits.Add(credit);
+            }
+        }
+    }
+
+    private static void PrintCombinedTitlesAndCredits(List<Title> titles, List<Credit> credits)
+    {
+        foreach (Title title in titles)
+        {
+            Console.WriteLine("Title:");
+            Console.WriteLine($"{title.Id}, {title.TitleName}");
+            Console.Write("Cast: ");
+
+            List<Credit> relatedCredits = credits.FindAll(c => c.TitleId == title.Id);
+            if (relatedCredits.Count > 0)
+            {
+                for (int i = 0; i < relatedCredits.Count; i++)
+                {
+                    Console.Write($"{relatedCredits[i].RealName}");
+                    if (i < relatedCredits.Count - 1)
+                    {
+                        Console.Write(", ");
+                    }
+                }
+                Console.WriteLine();
+            }
+            else
+            {
+                Console.WriteLine("No Credits");
+            }
+
+            Console.WriteLine("--------------------");
+        }
+    }
+}
+ChatGPT
+To split the existing code for better organization, clarity, and clean code practices, I'll suggest the following changes:
+
+Create a DataGeneratorService class that will be responsible for generating titles and credits.
+Create a CsvFileService class that will handle printing and saving data to CSV.
+Organize and refactor the Main class to use these services.
+Here's how it can be structured:
+
+DataGeneratorService.cs
+csharp
+Copy code
+using System.Collections.Generic;
+using Bogus;
+using MovieFileGenerator.Models;
+
+namespace MovieFileGenerator.Services
+{
+    public class DataGeneratorService
+    {
+        // ... Private members (like Fakers and IDs) ...
+
+        public DataGeneratorService()
+        {
+            InitializeFakers();
+        }
+
+        public void GenerateData(out List<Title> titles, out List<Credit> credits)
+        {
+            // ... logic to generate data ...
+
+            titles = _titles;
+            credits = _credits;
+        }
+
+        // ... Remaining methods for data generation ...
+    }
+}
+CsvFileService.cs
+csharp
+Copy code
+using System.Collections.Generic;
+using System.Globalization;
+using CsvHelper;
+using System.IO;
+
+namespace MovieFileGenerator.Services
+{
+    public class CsvFileService
+    {
+        public void SaveToCsv<T>(IEnumerable<T> records, string filename)
+        {
+            // ... Logic to save data to CSV ...
+        }
+
+        public void PrintCombinedTitlesAndCredits(List<Title> titles, List<Credit> credits)
+        {
+            // ... Logic to print titles and credits ...
+        }
+    }
+}
+Refactored Program.cs
+csharp
+Copy code
+using MovieFileGenerator.Models;
+using MovieFileGenerator.Services;
+
+namespace MovieFileGenerator
+{
+    public class Program
+    {
+        public static void Main()
+        {
+            var dataGeneratorService = new DataGeneratorService();
+            var csvFileService = new CsvFileService();
+
+            dataGeneratorService.GenerateData(out var titles, out var credits);
+
+            csvFileService.PrintCombinedTitlesAndCredits(titles, credits);
+            csvFileService.SaveToCsv(titles, "titles");
+            csvFileService.SaveToCsv(credits, "credits");
+        }
+    }
+}
+The code has now been broken down into more focused, organized components. Each class has a clear responsibility, making the entire application easier to understand, maintain, and expand upon.
+
+
+
+
+User
+create methods to return private static List<Credit> _credits = new List<Credit>();
+private static List<Title> _titles = new List<Title>();
+ChatGPT
+To encapsulate and provide access to the private static lists, you can use properties or methods. Here, I'll demonstrate how to provide methods to return the lists without exposing them for modification:
+
+DataGeneratorService.cs
+csharp
+Copy code
+using System.Collections.Generic;
+using Bogus;
+using MovieFileGenerator.Models;
+
+namespace MovieFileGenerator.Services
+{
+    public class DataGeneratorService
+    {
+        private static List<Credit> _credits = new List<Credit>();
+        private static List<Title> _titles = new List<Title>();
+
+        // ... Other members and methods ...
+
+        public List<Credit> GetCredits()
+        {
+            // Return a new list to prevent modification of the original list
+            return new List<Credit>(_credits);
+        }
+
+        public List<Title> GetTitles()
+        {
+            // Return a new list to prevent modification of the original list
+            return new List<Title>(_titles);
+        }
+    }
+}
+By using these methods:
+
+You can access the lists from outside the class.
+Since we're returning a new copy of the list, modifications to the returned list won't affect the original lists, preserving data integrity.
+
+
+
+User
+split to methods
+ public DataGeneratorService()
+ {
+     titleFaker = new Faker<Title>()
+         .RuleFor(t => t.Id, f => titleId++)
+         .RuleFor(t => t.TitleName, f => f.PickRandom(new[]
+         {
+             $"{f.Commerce.ProductAdjective()} {f.Commerce.ProductName()}",
+             $"{f.Hacker.Adjective()} {f.Hacker.Noun()}",
+             $"{f.Lorem.Word()} of {f.Lorem.Word()}",
+             $"The {f.Lorem.Word()} {f.Hacker.Verb()}",
+             $"Return of the {f.Hacker.Noun()}",
+             $"{f.Name.FirstName()}'s {f.Hacker.Adjective()} Adventure"
+         }))
+         .RuleFor(t => t.Description, f => f.Lorem.Paragraph())
+         .RuleFor(t => t.ReleaseYear, f => f.Date.Past().Year)
+         .RuleFor(t => t.AgeCertification, f => f.PickRandom(new List<string>
+         {
+             "G", "PG", "PG-13", "R", "NC-17", "U", "U/A", "A", "S", "AL", "6", "9", "12",
+             "12A", "15", "18", "18R", "R18", "R21", "M", "MA15+", "R16", "R18+", "X18",
+             "T", "E", "E10+", "EC", "C", "CA", "GP", "M/PG", "TV-Y", "TV-Y7", "TV-G",
+             "TV-PG", "TV-14", "TV-MA"
+         }))
+         .RuleFor(t => t.Runtime, f => f.Random.Int(80, 180))
+         .RuleFor(t => t.Genres, f => new List<string> { f.PickRandom("Action", "Drama", "Comedy", "Horror", "Adventure") })
+         .RuleFor(t => t.ProductionCountry, f => f.Address.CountryCode())
+         .RuleFor(t => t.Seasons, f => f.Random.Int(0, 10));
+
+     creditFaker = new Faker<Credit>()
+         .RuleFor(c => c.Id, f => creditId++)
+         .RuleFor(c => c.TitleId, titleId)
+         .RuleFor(c => c.RealName, f => f.Name.FullName())
+         .RuleFor(c => c.CharacterName, f => f.Name.FirstName())
+         .RuleFor(c => c.Role, f => f.PickRandom(new[]
+         {
+             "Director", "Producer", "Screenwriter", "Actor", "Actress",
+             "Cinematographer", "Film Editor", "Production Designer",
+             "Costume Designer", "Music Composer"
+         }));
+
+     nonCompliantTitleFaker = new Faker<Title>()
+         .RuleFor(t => t.Id, f => titleId++)
+         .RuleFor(t => t.TitleName, f => f.Lorem.Word())
+         .RuleFor(t => t.Genres, f => new List<string> { f.Lorem.Word() });
+
+     nonCompliantCreditFaker = new Faker<Credit>()
+         .RuleFor(c => c.Id, f => creditId++)
+         .RuleFor(c => c.TitleId, titleId)
+         .RuleFor(c => c.Role, f => f.Lorem.Word());
+ }
+ChatGPT
+The provided code block initializes various Faker objects. To clean it up and enhance readability, we can split the initializations into separate methods, each responsible for creating a specific type of faker. Here's a refactored version:
+
+csharp
+Copy code
+using Bogus;
+using MovieFileGenerator.Models;
+using System.Collections.Generic;
+
+namespace MovieFileGenerator.Services
+{
+    public class DataGeneratorService
+    {
+        private static int titleId = 1;
+        private static int creditId = 1;
+
+        private Faker<Title> titleFaker;
+        private Faker<Credit> creditFaker;
+        private Faker<Title> nonCompliantTitleFaker;
+        private Faker<Credit> nonCompliantCreditFaker;
+
+        public DataGeneratorService()
+        {
+            InitializeTitleFaker();
+            InitializeCreditFaker();
+            InitializeNonCompliantTitleFaker();
+            InitializeNonCompliantCreditFaker();
+        }
+
+        private void InitializeTitleFaker()
+        {
+            titleFaker = new Faker<Title>()
+                .RuleFor(t => t.Id, f => titleId++)
+                .RuleFor(t => t.TitleName, f => GenerateTitleName(f))
+                .RuleFor(t => t.Description, f => f.Lorem.Paragraph())
+                .RuleFor(t => t.ReleaseYear, f => f.Date.Past().Year)
+                .RuleFor(t => t.AgeCertification, f => f.PickRandom(Certifications()))
+                .RuleFor(t => t.Runtime, f => f.Random.Int(80, 180))
+                .RuleFor(t => t.Genres, f => new List<string> { f.PickRandom("Action", "Drama", "Comedy", "Horror", "Adventure") })
+                .RuleFor(t => t.ProductionCountry, f => f.Address.CountryCode())
+                .RuleFor(t => t.Seasons, f => f.Random.Int(0, 10));
+        }
+
+        private void InitializeCreditFaker()
+        {
+            creditFaker = new Faker<Credit>()
+                .RuleFor(c => c.Id, f => creditId++)
+                .RuleFor(c => c.TitleId, titleId)
+                .RuleFor(c => c.RealName, f => f.Name.FullName())
+                .RuleFor(c => c.CharacterName, f => f.Name.FirstName())
+                .RuleFor(c => c.Role, f => f.PickRandom(CreditRoles()));
+        }
+
+        private void InitializeNonCompliantTitleFaker()
+        {
+            nonCompliantTitleFaker = new Faker<Title>()
+                .RuleFor(t => t.Id, f => titleId++)
+                .RuleFor(t => t.TitleName, f => f.Lorem.Word())
+                .RuleFor(t => t.Genres, f => new List<string> { f.Lorem.Word() });
+        }
+
+        private void InitializeNonCompliantCreditFaker()
+        {
+            nonCompliantCreditFaker = new Faker<Credit>()
+                .RuleFor(c => c.Id, f => creditId++)
+                .RuleFor(c => c.TitleId, titleId)
+                .RuleFor(c => c.Role, f => f.Lorem.Word());
+        }
+
+        private string GenerateTitleName(Faker f)
+        {
+            return f.PickRandom(new[]
+            {
+                $"{f.Commerce.ProductAdjective()} {f.Commerce.ProductName()}",
+                $"{f.Hacker.Adjective()} {f.Hacker.Noun()}",
+                $"{f.Lorem.Word()} of {f.Lorem.Word()}",
+                $"The {f.Lorem.Word()} {f.Hacker.Verb()}",
+                $"Return of the {f.Hacker.Noun()}",
+                $"{f.Name.FirstName()}'s {f.Hacker.Adjective()} Adventure"
+            });
+        }
+
+        private string[] Certifications()
+        {
+            return new[]
+            {
+                "G", "PG", "PG-13", "R", "NC-17", "U", "U/A", "A", "S", "AL", "6", "9", "12",
+                "12A", "15", "18", "18R", "R18", "R21", "M", "MA15+", "R16", "R18+", "X18",
+                "T", "E", "E10+", "EC", "C", "CA", "GP", "M/PG", "TV-Y", "TV-Y7", "TV-G",
+                "TV-PG", "TV-14", "TV-MA"
+            };
+        }
+
+        private string[] CreditRoles()
+        {
+            return new[]
+            {
+                "Director", "Producer", "Screenwriter", "Actor", "Actress",
+                "Cinematographer", "Film Editor", "Production Designer",
+                "Costume Designer", "Music Composer"
+            };
+        }
+
+        // ... Other members and methods ...
+    }
+}
+This refactoring does the following:
+
+Each Faker initialization is in its own method, making the code more organized.
+Repeated static arrays and strings are placed in separate methods for better readability and maintainability.
+
+
+
+User
+
+2 / 2
+
+make ability to configure what generation methods should be used using fluent style. if step is not configured just skip
+ChatGPT
+To allow for a fluent configuration of which generation methods should be used, we can design a builder pattern that exposes methods to configure our DataGeneratorService object. Let's create the fluent-style builder for this purpose:
+
+csharp
+Copy code
+public class DataGeneratorServiceBuilder
+{
+    private bool _generateTitles = false;
+    private bool _generateCredits = false;
+    private bool _generateNonCompliantTitles = false;
+    private bool _generateNonCompliantCredits = false;
+
+    public DataGeneratorServiceBuilder WithTitles()
+    {
+        _generateTitles = true;
+        return this;
+    }
+
+    public DataGeneratorServiceBuilder WithCredits()
+    {
+        _generateCredits = true;
+        return this;
+    }
+
+    public DataGeneratorServiceBuilder WithNonCompliantTitles()
+    {
+        _generateNonCompliantTitles = true;
+        return this;
+    }
+
+    public DataGeneratorServiceBuilder WithNonCompliantCredits()
+    {
+        _generateNonCompliantCredits = true;
+        return this;
+    }
+
+    public DataGeneratorService Build()
+    {
+        return new DataGeneratorService(this);
+    }
+
+    // Internal getters for the private fields
+    internal bool ShouldGenerateTitles => _generateTitles;
+    internal bool ShouldGenerateCredits => _generateCredits;
+    internal bool ShouldGenerateNonCompliantTitles => _generateNonCompliantTitles;
+    internal bool ShouldGenerateNonCompliantCredits => _generateNonCompliantCredits;
+}
+Then, modify the DataGeneratorService class to accept this builder and configure its generation accordingly:
+
+csharp
+Copy code
+public class DataGeneratorService
+{
+    // ... other members ...
+
+    private DataGeneratorServiceBuilder _builder;
+
+    public DataGeneratorService(DataGeneratorServiceBuilder builder)
+    {
+        _builder = builder;
+
+        if (_builder.ShouldGenerateTitles)
+            InitializeTitleFaker();
+
+        if (_builder.ShouldGenerateCredits)
+            InitializeCreditFaker();
+
+        if (_builder.ShouldGenerateNonCompliantTitles)
+            InitializeNonCompliantTitleFaker();
+
+        if (_builder.ShouldGenerateNonCompliantCredits)
+            InitializeNonCompliantCreditFaker();
+    }
+
+    // ... rest of the class ...
+}
+Using the fluent configuration would look something like:
+
+csharp
+Copy code
+var service = new DataGeneratorServiceBuilder()
+    .WithTitles()
+    .WithCredits()
+    .Build();
+
+// Now `service` will generate titles and credits, but not non-compliant titles and credits.
+This way, you can easily configure the DataGeneratorService to generate only the data that you need, and skip what you don't.
+
+
+
+
+User
+connect similar values to tuples
+namespace MovieFileGenerator.Services;
+
+public class DataGeneratorServiceBuilder
+{
+    public bool GenerateTitles { get; private set; }
+    public bool GenerateCredits { get; private set; }
+    public bool GenerateNonCompliantTitles { get; private set; }
+    public bool GenerateNonCompliantCredits { get; private set; }
+
+    public int NumberOfTitlesWithCredits { get; private set; }
+    public int NumberOfTitlesWithoutCredits { get; private set; }
+    public int NumberOfInvalidTitlesAndCredits { get; private set; }
+    public int NumberOfCreditsWithoutTitles { get; private set; }
+
+    public DataGeneratorServiceBuilder WithTitlesWithCredits(int numberOfTitlesWithCredits = 90)
+    {
+        GenerateTitles = true;
+        NumberOfTitlesWithCredits = numberOfTitlesWithCredits;
+        return this;
+    }
+
+    public DataGeneratorServiceBuilder WithTitlesWithoutCredits(int numberOfTitlesWithoutCredits = 10)
+    {
+        GenerateCredits = true;
+        NumberOfTitlesWithoutCredits = numberOfTitlesWithoutCredits;
+        return this;
+    }
+
+    public DataGeneratorServiceBuilder WithInvalidTitlesAndCredits(int numberOfInvalidTitlesAndCredits = 20)
+    {
+        GenerateNonCompliantTitles = true;
+        NumberOfInvalidTitlesAndCredits = numberOfInvalidTitlesAndCredits;
+        return this;
+    }
+
+    public DataGeneratorServiceBuilder WithCreditsWithoutTitles(int numberOfCreditsWithoutTitles = 10)
+    {
+        GenerateNonCompliantCredits = true;
+        NumberOfCreditsWithoutTitles = numberOfCreditsWithoutTitles;
+        return this;
+    }
+
+    public DataGeneratorService Build()
+    {
+        return new DataGeneratorService(this);
+    }
+}
+ChatGPT
+To group similar properties, you can use tuples. This makes the code cleaner and more concise. Here's how you can refactor the DataGeneratorServiceBuilder class to use tuples:
+
+csharp
+Copy code
+namespace MovieFileGenerator.Services
+{
+    public class DataGeneratorServiceBuilder
+    {
+        public (bool Generate, int NumberOfTitles) TitlesWithCredits { get; private set; }
+        public (bool Generate, int NumberOfTitles) TitlesWithoutCredits { get; private set; }
+        public (bool Generate, int Number) InvalidTitlesAndCredits { get; private set; }
+        public (bool Generate, int NumberOfCredits) CreditsWithoutTitles { get; private set; }
+
+        public DataGeneratorServiceBuilder WithTitlesWithCredits(int numberOfTitlesWithCredits = 90)
+        {
+            TitlesWithCredits = (true, numberOfTitlesWithCredits);
+            return this;
+        }
+
+        public DataGeneratorServiceBuilder WithTitlesWithoutCredits(int numberOfTitlesWithoutCredits = 10)
+        {
+            TitlesWithoutCredits = (true, numberOfTitlesWithoutCredits);
+            return this;
+        }
+
+        public DataGeneratorServiceBuilder WithInvalidTitlesAndCredits(int numberOfInvalidTitlesAndCredits = 20)
+        {
+            InvalidTitlesAndCredits = (true, numberOfInvalidTitlesAndCredits);
+            return this;
+        }
+
+        public DataGeneratorServiceBuilder WithCreditsWithoutTitles(int numberOfCreditsWithoutTitles = 10)
+        {
+            CreditsWithoutTitles = (true, numberOfCreditsWithoutTitles);
+            return this;
+        }
+
+        public DataGeneratorService Build()
+        {
+            return new DataGeneratorService(this);
+        }
+    }
+}
+This refactoring should give you a more organized structure. When accessing these properties in the DataGeneratorService or elsewhere, you can now use the tuple's named properties, e.g., builder.TitlesWithCredits.Generate or builder.TitlesWithCredits.NumberOfTitles.
+
+
+
+
+User
+
+4 / 4
+
+csvhelper ignores list of strings. but should write separated write all genres in one cell
+namespace MovieFileGenerator.Models;
+
+public record Title
+{
+    public int Id { get; set; }
+    public string TitleName { get; set; }
+    public string Description { get; set; }
+    public int ReleaseYear { get; set; }
+    public string AgeCertification { get; set; }
+    public int Runtime { get; set; }
+    public List<string> Genres { get; set; }
+    public string ProductionCountry { get; set; }
+    public int? Seasons { get; set; }
+}
+ChatGPT
+CSVHelper is a great library for working with CSV files in C#. If you want to save a list of strings (like your Genres property) into one cell in a CSV, you typically need to create a custom converter for that specific property.
+
+Here's how you can write a custom converter for your Genres property and then map it when creating your CSV:
+
+First, create a custom converter for the Genres list:
+csharp
+Copy code
+using CsvHelper;
+using CsvHelper.TypeConversion;
+using System.Collections.Generic;
+
+public class GenreListConverter : DefaultTypeConverter
+{
+    public override string ConvertToString(object value, IWriterRow row, MemberMapData memberMapData)
+    {
+        var list = (List<string>)value;
+        return string.Join(';', list); // Change ';' to any delimiter you prefer.
+    }
+}
+Then, in the part of your code where you're setting up your CSV writer, configure the mapping:
+csharp
+Copy code
+using CsvHelper;
+using CsvHelper.Configuration;
+using MovieFileGenerator.Models;
+
+public sealed class TitleMap : ClassMap<Title>
+{
+    public TitleMap()
+    {
+        AutoMap();
+        Map(m => m.Genres).TypeConverter<GenreListConverter>();
+    }
+}
+Finally, when writing to your CSV, use the custom mapping:
+csharp
+Copy code
+using System.IO;
+using CsvHelper;
+
+// ... your other code ...
+
+using var writer = new StreamWriter("your_file_path.csv");
+using var csv = new CsvWriter(writer, CultureInfo.InvariantCulture);
+
+csv.Context.RegisterClassMap<TitleMap>();
+csv.WriteRecords(yourListOfTitles);
+Now, when you write your records to CSV, the Genres property should be converted to a single string with all genres separated by semicolons (or any other delimiter you chose).
+
+
+
+
+User
+            .RuleFor(t => t.Genres, f => new List<string> { f.PickRandom("Action", "Drama", "Comedy", "Horror", "Adventure") })
+ make number of genres from 1 to 5
+ChatGPT
+To generate a varying number of genres from 1 to 5 for the Genres property, you can adjust your rule as follows:
+
+csharp
+Copy code
+.RuleFor(t => t.Genres, f => 
+{
+    var availableGenres = new List<string> { "Action", "Drama", "Comedy", "Horror", "Adventure" };
+    var count = f.Random.Int(1, 5);
+    return f.PickRandom(availableGenres, count).ToList();
+})
+What this does:
+
+Define the available genres in the availableGenres
+
+
+
+User
+change column name from camel case to name with underscore
+ChatGPT
+To change the column name from camel case to a name with underscores for CSVHelper, you'll need to use a ClassMap to map your properties to their desired CSV column names.
+
+Here's how you can achieve that for your Title record:
+
+First, you'll need to create a custom ClassMap for the Title record:
+csharp
+Copy code
+using CsvHelper.Configuration;
+using MovieFileGenerator.Models;
+
+public class TitleMap : ClassMap<Title>
+{
+    public TitleMap()
+    {
+        Map(t => t.Id).Name(ConvertToUnderscoreCase(nameof(Title.Id)));
+        Map(t => t.TitleName).Name(ConvertToUnderscoreCase(nameof(Title.TitleName)));
+        Map(t => t.Description).Name(ConvertToUnderscoreCase(nameof(Title.Description)));
+        Map(t => t.ReleaseYear).Name(ConvertToUnderscoreCase(nameof(Title.ReleaseYear)));
+        Map(t => t.AgeCertification).Name(ConvertToUnderscoreCase(nameof(Title.AgeCertification)));
+        Map(t => t.Runtime).Name(ConvertToUnderscoreCase(nameof(Title.Runtime)));
+        Map(t => t.Genres).ConvertUsing(row => string.Join(", ", row.Genres)).Name(ConvertToUnderscoreCase(nameof(Title.Genres)));
+        Map(t => t.ProductionCountry).Name(ConvertToUnderscoreCase(nameof(Title.ProductionCountry)));
+        Map(t => t.Seasons).Name(ConvertToUnderscoreCase(nameof(Title.Seasons)));
+    }
+
+    private string ConvertToUnderscoreCase(string input)
+    {
+        return string.Concat(input.Select((x, i) => i > 0 && char.IsUpper(x) ? "_" + x.ToString() : x.ToString())).ToLower();
+    }
+}
+When you're writing your CSV, you'll register this map:
+csharp
+Copy code
+using CsvHelper;
+
+var csvWriter = new CsvWriter(textWriter);
+csvWriter.Configuration.RegisterClassMap<TitleMap>();
+This setup will ensure that your CSV column names are converted from camel case to underscore_case.
